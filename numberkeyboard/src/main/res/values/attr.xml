@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="InputNumberView">
+        <attr name="inv_codeCount" format="integer"/>
+        <attr name="inv_inputViewWidth" format="dimension"/>
+        <attr name="inv_inputViewHeight" format="dimension"/>
+        <attr name="inv_inputTextSize" format="dimension"/>
+        <attr name="inv_inputTextColor" format="color"/>
+        <attr name="inv_isPwd" format="boolean"/>
+        <attr name="inv_encryptCodeChar" format="string"/>
+        <attr name="inv_isDrawFrame" format="boolean"/>
+        <attr name="inv_frameColor" format="color"/>
+        <attr name="inv_frameSize" format="dimension"/>
+        <attr name="inv_isDrawDivider" format="boolean"/>
+        <attr name="inv_dividerColor" format="color"/>
+        <attr name="inv_dividerSize" format="dimension"/>
+    </declare-styleable>
+    <declare-styleable name="NumberKeyboardView">
+        <attr name="nkv_isSwapClearDelPosition" format="boolean"/>
+    </declare-styleable>
+</resources>
