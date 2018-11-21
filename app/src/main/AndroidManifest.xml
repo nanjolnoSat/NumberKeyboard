@@ -16,6 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity android:name=".PasswordActivity"/>
+        <activity android:name=".NumberKeyboardActivity"/>
+        <activity android:name=".NumberKeyboardActivity1"/>
     </application>
 
 </manifest>

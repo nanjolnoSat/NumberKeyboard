@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.mishaki.numberkeyboard.view.InputNumberView
-        android:id="@+id/main_inv"
-        app:inv_encryptCodeChar="***"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <com.mishaki.numberkeyboard.view.NumberKeyboardView
-        android:id="@+id/main_nkv"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
     <Button
-        android:id="@+id/main_btn"
+        android:id="@+id/main_pd_btn"
         android:layout_width="wrap_content"
-        android:text="show"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="password_dialog"/>
+
+    <Button
+        android:id="@+id/main_nkd_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="number_keyboard_dialog"/>
+    <Button
+        android:id="@+id/main_nkd_btn1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="number_keyboard_dialog1"/>
 </LinearLayout>

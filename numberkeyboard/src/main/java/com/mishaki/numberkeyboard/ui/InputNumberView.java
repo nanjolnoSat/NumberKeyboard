@@ -1,4 +1,4 @@
-package com.mishaki.numberkeyboard.view;
+package com.mishaki.numberkeyboard.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -91,6 +91,7 @@ public class InputNumberView extends LinearLayout {
             array.recycle();
         }
         setGravity(Gravity.CENTER_HORIZONTAL);
+        setPadding(0, (int) (NumberKeyboardUtil.px2sp(context, 5)), 0, (int) (NumberKeyboardUtil.px2dp(context, 5)));
         if (codeCount != -1) {
             this.codeCount = codeCount;
         }
@@ -143,6 +144,34 @@ public class InputNumberView extends LinearLayout {
             textView.setGravity(inputViewGravity);
             super.addView(textView);
             inputViewList.add(textView);
+        }
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        if ((isDrawFrame || isDrawDivider) && getChildCount() != 0) {
+            final float allInputViewWidth = inputViewWidth * inputViewList.size();
+            final float startX = (getWidth() - allInputViewWidth) / 2f;
+            final float endX = startX + allInputViewWidth;
+            final float startY = getPaddingTop();
+            final float endY = getPaddingTop() + inputViewHeight;
+            if (isDrawFrame) {
+                //绘制左边的线
+                canvas.drawRect(startX, startY, startX + frameSize, endY, framePaint);
+                //绘制上面的线
+                canvas.drawRect(startX, startY, endX, startY + frameSize, framePaint);
+                //绘制右边的线
+                canvas.drawRect(endX - frameSize, startY, endX, endY, framePaint);
+                //绘制下面的线
+                canvas.drawRect(startX, endY - frameSize, endX, endY, framePaint);
+            }
+            if (isDrawDivider) {
+                //绘制中间的分隔线
+                for (int i = 1; i < inputViewList.size(); i++) {
+                    canvas.drawRect(startX + i * inputViewWidth - dividerSize / 2f, startY + frameSize, startX + i * inputViewWidth + dividerSize / 2f, endY - frameSize, dividerPaint);
+                }
+            }
         }
     }
 
@@ -222,6 +251,9 @@ public class InputNumberView extends LinearLayout {
     }
 
     public final InputNumberView setInputTextColor(int color) {
+        if (this.inputTextColor == color) {
+            return this;
+        }
         this.inputTextColor = color;
         for (TextView tv : inputViewList) {
             tv.setTextColor(color);
@@ -229,40 +261,35 @@ public class InputNumberView extends LinearLayout {
         return this;
     }
 
-    public final InputNumberView setOnTextChangeListener(OnTextChangeListener listener) {
-        this.listener = listener;
+    public final InputNumberView isPwd(boolean isPwd) {
+        if (this.isPwd == isPwd) {
+            return this;
+        }
+        for (int i = 0; i < codeList.size(); i++) {
+            final TextView tv = inputViewList.get(i);
+            if (isPwd) {
+                tv.setText(String.valueOf(encryptCodeChar));
+            } else {
+                tv.setText(String.valueOf(codeList.get(i)));
+            }
+        }
         return this;
     }
 
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        super.dispatchDraw(canvas);
-        if (isDrawFrame || isDrawDivider) {
-            final float allInputViewWidth = inputViewWidth * inputViewList.size();
-            final float startX = (getWidth() - allInputViewWidth) / 2f;
-            final float endX = startX + allInputViewWidth;
-            final float startY = getPaddingTop();
-            final float endY = getPaddingTop() + inputViewHeight;
-            if (isDrawFrame) {
-                //绘制左边的线
-                canvas.drawRect(startX, startY, startX + frameSize, endY, framePaint);
-                //绘制上面的线
-                canvas.drawRect(startX, startY, endX, startY + frameSize, framePaint);
-                //绘制右边的线
-                canvas.drawRect(endX - frameSize, startY, endX, endY, framePaint);
-                //绘制下面的线
-                canvas.drawRect(startX, endY - frameSize, endX, endY, framePaint);
-            }
-            if (isDrawDivider) {
-                //绘制中间的分隔线
-                for (int i = 1; i < inputViewList.size(); i++) {
-                    canvas.drawRect(startX + i * inputViewWidth - dividerSize / 2f, startY + frameSize, startX + i * inputViewWidth + dividerSize / 2f, endY - frameSize, dividerPaint);
-                }
+    public final InputNumberView setEncryptCodeChar(char encryptCodeChar) {
+        if (this.encryptCodeChar == encryptCodeChar) {
+            return this;
+        }
+        if (isPwd) {
+            for (int i = 0; i < codeList.size(); i++) {
+                final TextView tv = inputViewList.get(i);
+                tv.setText(String.valueOf(encryptCodeChar));
             }
         }
+        return this;
     }
 
-    public final void setNumberKeyboard(final NumberKeyboardView nkv) {
+    public final InputNumberView bindNumberKeyboard(final NumberKeyboardView nkv) {
         nkv.getNkAdapter().setOnNumberKeyboradClickListener(new NumberKeyboardView.NkAdapter.OnNumberKeyboardClickListener() {
             @Override
             public void onNumberClick(int number) {
@@ -274,7 +301,11 @@ public class InputNumberView extends LinearLayout {
                     }
                     codeList.push(number);
                     if (listener != null) {
-                        listener.onTextChange(getInputCode(), codeList.size());
+                        if (codeList.size() == codeCount) {
+                            listener.onInputFinish(getInputCode());
+                        } else {
+                            listener.onTextChange(getInputCode(), codeList.size());
+                        }
                     }
                 }
             }
@@ -301,6 +332,7 @@ public class InputNumberView extends LinearLayout {
                 }
             }
         });
+        return this;
     }
 
     public final InputNumberView isDrawFrame(boolean isDrawFrame) {
@@ -365,6 +397,11 @@ public class InputNumberView extends LinearLayout {
         return str.toString();
     }
 
+    public final InputNumberView setOnTextChangeListener(OnTextChangeListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
     @Override
     public void addView(View child) {
 
@@ -375,8 +412,10 @@ public class InputNumberView extends LinearLayout {
 
     }
 
-    interface OnTextChangeListener {
+    public interface OnTextChangeListener {
         void onTextChange(String text, int length);
+
+        void onInputFinish(String text);
 
         void onTextClear();
 

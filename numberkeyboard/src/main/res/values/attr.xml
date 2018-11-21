@@ -17,5 +17,7 @@
     </declare-styleable>
     <declare-styleable name="NumberKeyboardView">
         <attr name="nkv_isSwapClearDelPosition" format="boolean"/>
+        <attr name="nkv_dividerColor" format="color"/>
+        <attr name="nkv_dividerSize" format="dimension"/>
     </declare-styleable>
 </resources>
