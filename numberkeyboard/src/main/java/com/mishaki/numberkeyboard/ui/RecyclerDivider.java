@@ -369,7 +369,6 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
     @Override
     public void onDraw(final Canvas c, final RecyclerView parent, final RecyclerView.State state) {
         final RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
-//        parent.setLayerType(View.LAYER_TYPE_SOFTWARE,null);
         final int id = c.saveLayer(parent.getPaddingLeft(),0,parent.getWidth() - parent.getPaddingRight(),parent.getHeight(),null,Canvas.ALL_SAVE_FLAG);
         if (layoutManager instanceof GridLayoutManager) {
             if (((GridLayoutManager) parent.getLayoutManager()).getOrientation() == RecyclerView.VERTICAL) {
