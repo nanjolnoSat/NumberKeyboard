@@ -14,28 +14,53 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 public class RecyclerDivider extends RecyclerView.ItemDecoration {
+    /**
+     * 在child的左边绘制,可用于LinearLayoutManager的horizontal和GridLayoutManager.
+     * 在GridLayoutManager中可与TOP、BOTTOM相加一起使用.
+     */
     public static final int LEFT = 0b1;
+    /**
+     * 在2个child中间绘制.
+     */
     public static final int MIDDLE = 0b100;
+    /**
+     * 在child的右边绘制,可用于LinearLayoutManager的horizontal和GridLayoutManager.
+     * 在GridLayoutManager中可与TOP、BOTTOM相加一起使用.
+     */
     public static final int RIGHT = 0b10000;
+    /**
+     * 在child的上面绘制,可用于LinearLayoutManager的vertical和GridLayoutManager.
+     * 在GridLayoutManager中可与LEFT、RIGHT相加一起使用.
+     */
     public static final int TOP = 0b1000000;
+    /**
+     * 在child的下面绘制,可用于LinearLayoutManager的vertical和GridLayoutManager.
+     * 在GridLayoutManager中可与LEFT、RIGHT相加一起使用.
+     */
     public static final int BOTTOM = 0b100000000;
+    /**
+     * 在child的四周绘制
+     */
     public static final int ALL = 0b10000000000;
+    /**
+     * 在child的四周绘制,边缘部分宽度为原来的一半
+     */
     public static final int ALL_HALF = 0b1000000000000;
 
-    private float size;
+    protected float size;
     private boolean isReviseSize;
 
     private int type;
 
-    private final Paint mPaint = new Paint();
-    private final Paint clipPaint = new Paint();
+    private Paint paint = new Paint();
+    private Paint clipPaint = new Paint();
 
     private float horizontalDividerSize;
     private float verticalDividerSize;
 
     private Drawable drawable;
 
-    private RecyclerDivider(final float size, final float horizontalDividerSize, final float verticalDividerSize, final boolean isReviseSize, final int color, final int type, final Drawable drawable) {
+    private RecyclerDivider(float size, Paint paint, float horizontalDividerSize, float verticalDividerSize, boolean isReviseSize, int color, int type, Drawable drawable) {
         this.size = size;
         this.horizontalDividerSize = horizontalDividerSize;
         this.verticalDividerSize = verticalDividerSize;
@@ -43,16 +68,20 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         this.type = type;
         this.drawable = drawable;
 
-        mPaint.setAntiAlias(true);
-        mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setColor(color);
+        if (paint != null) {
+            this.paint = paint;
+        } else {
+            this.paint.setAntiAlias(true);
+            this.paint.setStyle(Paint.Style.FILL);
+            this.paint.setColor(color);
+        }
 
         clipPaint.setAntiAlias(true);
         clipPaint.setColor(0x00ffffff);
         clipPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
     }
 
-    public static class Build {
+    public static final class Build {
         private float size;
         private float horizontalDividerSize = -1;
         private float verticalDividerSize = -1;
@@ -63,10 +92,12 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         private int type = RecyclerDivider.MIDDLE;
         private Drawable drawable;
 
-        private Context context;
-        private int drawableResId = Integer.MAX_VALUE;
+        private Paint paint;
 
-        public Build setSize(final float size) {
+        /**
+         * 当没有设置horizontalDividerSize和verticalDividerSize的时候,会顺便设置
+         */
+        public Build setSize(float size) {
             this.size = size;
             if (this.horizontalDividerSize == -1) {
                 this.horizontalDividerSize = size;
@@ -77,19 +108,25 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
             return this;
         }
 
-        public Build setHorizontalDividerSize(final float horizontalDividerSize) {
+        /**
+         * 设置GridLayoutManager的水平分割线的宽度
+         */
+        public Build setHorizontalDividerSize(float horizontalDividerSize) {
             this.horizontalDividerSize = horizontalDividerSize;
             return this;
         }
 
-        public Build setVeticalDividerSize(final float verticalDividerSize) {
+        /**
+         * 设置GridLayoutManager的垂直分割线的宽度
+         */
+        public Build setVerticalDividerSize(float verticalDividerSize) {
             this.verticalDividerSize = verticalDividerSize;
             return this;
         }
 
         /**
          * 需要修正必须满足3个条件:
-         * 1,LayoutManager必须为GridManager
+         * 1,LayoutManager必须为GridLayoutManager
          * 2,Divider的type为MIDDLE、ALL、ALL_HALF
          * 3,行数/列数超过一行/列
          * tips:
@@ -97,44 +134,47 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
          * 2):当orientation为vertical时,会使horizontalSize的倍数为spanCount的倍数,verticalSize的倍数为2的倍数.
          * 3):只有type为ALL_HALF时才会进行2倍的修正,其他type并不会
          */
-        public Build isReviseSize(final boolean isReviseSize) {
+        public Build isReviseSize(boolean isReviseSize) {
             this.isReviseSize = isReviseSize;
             return this;
         }
 
-        public Build setColor(final int color) {
+        public Build setColor(int color) {
             this.color = color;
             return this;
         }
 
-        public Build setType(final int type) {
+        /**
+         * 默认为MIDDLE
+         */
+        public Build setType(int type) {
             this.type = type;
             return this;
         }
 
-        public Build setDrawable(final Drawable drawable) {
+        public Build setDrawable(Drawable drawable) {
             this.drawable = drawable;
             return this;
         }
 
-        public Build setDrawable(final Context context, final int drawableResId) {
-            this.context = context.getApplicationContext();
-            this.drawableResId = drawableResId;
+        public Build setDrawable(Context context, int drawableResId) {
+            this.drawable = ContextCompat.getDrawable(context, drawableResId);
             return this;
         }
 
-        public RecyclerDivider build() {
-            Drawable dividerDrawable = drawable;
-            if (context != null && drawableResId != Integer.MAX_VALUE) {
-                dividerDrawable = ContextCompat.getDrawable(context, drawableResId);
-            }
-            return new RecyclerDivider(size, horizontalDividerSize, verticalDividerSize, isReviseSize, color, type, dividerDrawable);
+        public Build setPaint(Paint paint) {
+            this.paint = paint;
+            return this;
+        }
+
+        public final RecyclerDivider build() {
+            return new RecyclerDivider(size, paint, horizontalDividerSize, verticalDividerSize, isReviseSize, color, type, drawable);
         }
     }
 
     @Override
-    public void getItemOffsets(final Rect outRect, final View view, final RecyclerView parent, final RecyclerView.State state) {
-        final RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
+    public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+        RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
         if (layoutManager instanceof GridLayoutManager) {
             if (((GridLayoutManager) layoutManager).getOrientation() == RecyclerView.VERTICAL) {
                 calcGridVerticalItemOffsets(outRect, view, parent);
@@ -150,9 +190,9 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void calcHorizontalItemOffsets(final Rect outRect, final View view, final RecyclerView parent) {
-        final int index = parent.getChildAdapterPosition(view);
-        final int count = parent.getAdapter().getItemCount();
+    private void calcHorizontalItemOffsets(Rect outRect, View view, RecyclerView parent) {
+        int index = parent.getChildAdapterPosition(view);
+        int count = parent.getAdapter().getItemCount();
         switch (type) {
             case LEFT:
                 outRect.left = (int) size;
@@ -185,9 +225,9 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void calcVerticalItemOffsets(final Rect outRect, final View view, final RecyclerView parent) {
-        final int index = parent.getChildAdapterPosition(view);
-        final int count = parent.getAdapter().getItemCount();
+    private void calcVerticalItemOffsets(Rect outRect, View view, RecyclerView parent) {
+        int index = parent.getChildAdapterPosition(view);
+        int count = parent.getAdapter().getItemCount();
         switch (type) {
             case TOP:
                 outRect.top = (int) size;
@@ -220,9 +260,9 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void calcGridVerticalItemOffsets(final Rect outRect, final View view, final RecyclerView parent) {
-        final int index = parent.getChildAdapterPosition(view);
-        final int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
+    private void calcGridVerticalItemOffsets(Rect outRect, View view, RecyclerView parent) {
+        int index = parent.getChildAdapterPosition(view);
+        int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
         if (isReviseSize) {
             if (type == MIDDLE || type == ALL) {
                 horizontalDividerSize = ((int) (horizontalDividerSize / spanCount)) * spanCount;
@@ -250,8 +290,18 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 outRect.bottom = (int) verticalDividerSize;
                 break;
             case MIDDLE:
-                final int childCount = parent.getAdapter().getItemCount();
-                final int lines;
+                /*
+                 * 由于宽度是有限的,如果只是简单的判断是否第一个然后设置间隔的话,每个child的宽度不都一样.
+                 * 所以要换别的解决方式.
+                 * 1,假设一行有6个child,则有5个间隔,即每个child要负责间隔的5/6.
+                 * 2,第一个的right毫无疑问是6-1/6,因为第一个的left必须为0/6.
+                 * 3,第二个的left为1/6,right为4/6
+                 * 4,最后一个的left是6-1/6,right为0/6.
+                 * 5,可以发现一个规律,child的left的分子由0递增至6-1,right由6-1递减至0.
+                 * 6,所以只要计算出child在这行的第n个,就能计算出left和right
+                 * */
+                int childCount = parent.getAdapter().getItemCount();
+                int lines;
                 if (childCount % spanCount == 0) {
                     lines = childCount / spanCount;
                 } else {
@@ -280,6 +330,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 outRect.bottom = (int) verticalDividerSize;
                 break;
             case ALL:
+                //和MIDDLE同理,5个间隔变成7个,所以5/6变成7/6.最开始的left由0/6变成6/6,right变成1/6
                 outRect.left = (int) ((spanCount - index % spanCount) * horizontalDividerSize / spanCount);
                 outRect.right = (int) ((index % spanCount + 1) * horizontalDividerSize / spanCount);
                 if (index / spanCount == 0) {
@@ -293,9 +344,9 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void calcGridHorizontalItemOffsets(final Rect outRect, final View view, final RecyclerView parent) {
-        final int index = parent.getChildAdapterPosition(view);
-        final int spanCount = ((GridLayoutManager) (parent.getLayoutManager())).getSpanCount();
+    private void calcGridHorizontalItemOffsets(Rect outRect, View view, RecyclerView parent) {
+        int index = parent.getChildAdapterPosition(view);
+        int spanCount = ((GridLayoutManager) (parent.getLayoutManager())).getSpanCount();
         if (isReviseSize) {
             if (type == MIDDLE || type == ALL) {
                 verticalDividerSize = ((int) (verticalDividerSize / spanCount)) * spanCount;
@@ -323,8 +374,8 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 outRect.bottom = (int) verticalDividerSize;
                 break;
             case MIDDLE:
-                final int childCount = parent.getAdapter().getItemCount();
-                final int columns;
+                int childCount = parent.getAdapter().getItemCount();
+                int columns;
                 if (childCount % spanCount == 0) {
                     columns = childCount / spanCount;
                 } else {
@@ -367,9 +418,10 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
     }
 
     @Override
-    public void onDraw(final Canvas c, final RecyclerView parent, final RecyclerView.State state) {
-        final RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
-        final int id = c.saveLayer(parent.getPaddingLeft(),0,parent.getWidth() - parent.getPaddingRight(),parent.getHeight(),null,Canvas.ALL_SAVE_FLAG);
+    public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+        RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
+        //当有设置padding的时候,在padding部分子view不会显示,但分隔符会显示,所以需要利用遮罩模式和图层剪掉
+        int id = c.saveLayer(0f, 0f, parent.getWidth(), parent.getHeight(), null, Canvas.ALL_SAVE_FLAG);
         if (layoutManager instanceof GridLayoutManager) {
             if (((GridLayoutManager) parent.getLayoutManager()).getOrientation() == RecyclerView.VERTICAL) {
                 drawGridVerticalDivider(c, parent);
@@ -383,25 +435,28 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 drawVerticalDivider(c, parent);
             }
         }
-        c.drawRect(parent.getPaddingLeft(),0,parent.getWidth() - parent.getPaddingRight(),parent.getPaddingTop(),clipPaint);
-        c.drawRect(parent.getPaddingLeft(),parent.getHeight() - parent.getPaddingBottom(),parent.getWidth() - parent.getPaddingRight(),parent.getHeight(),clipPaint);
+        //覆盖部分clear掉
+        c.drawRect(0f, 0f, parent.getPaddingLeft(), parent.getHeight(), clipPaint);
+        c.drawRect(parent.getPaddingLeft(), 0, parent.getWidth() - parent.getPaddingRight(), parent.getPaddingTop(), clipPaint);
+        c.drawRect(parent.getWidth() - parent.getPaddingRight(), 0, parent.getWidth(), parent.getHeight(), clipPaint);
+        c.drawRect(parent.getPaddingLeft(), parent.getHeight() - parent.getPaddingBottom(), parent.getWidth() - parent.getPaddingRight(), parent.getHeight(), clipPaint);
         c.save(id);
     }
 
-    private void drawHorizontalDivider(final Canvas canvas, final RecyclerView parent) {
-        final int childCount = parent.getChildCount();
+    private void drawHorizontalDivider(Canvas canvas, RecyclerView parent) {
+        int childCount = parent.getChildCount();
         switch (type) {
             case LEFT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                 }
                 break;
             case MIDDLE:
                 final int actualChildCount = parent.getAdapter().getItemCount();
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildLayoutPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildLayoutPosition(child);
                     if (position != actualChildCount - 1) {
                         drawRightDivider(canvas, child);
                     }
@@ -409,13 +464,13 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case RIGHT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                 }
                 break;
             case ALL:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     if (i == 0) {
                         drawLeftDivider(canvas, child);
@@ -424,37 +479,37 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case ALL_HALF:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
 
-                    final float top = child.getTop();
-                    final float bottom = child.getBottom();
+                    float top = child.getTop();
+                    float bottom = child.getBottom();
 
-                    final float left1 = child.getLeft() - get1_2Size();
-                    final float right1 = child.getLeft();
+                    float left1 = child.getLeft() - get1_2Size();
+                    float right1 = child.getLeft();
                     drawDivider(canvas, left1, top, right1, bottom);
 
-                    final float left2 = child.getRight();
-                    final float right2 = child.getRight() + get1_2Size();
+                    float left2 = child.getRight();
+                    float right2 = child.getRight() + get1_2Size();
                     drawDivider(canvas, left2, top, right2, bottom);
                 }
                 break;
         }
     }
 
-    private void drawVerticalDivider(final Canvas canvas, final RecyclerView parent) {
-        final int childCount = parent.getChildCount();
+    private void drawVerticalDivider(Canvas canvas, RecyclerView parent) {
+        int childCount = parent.getChildCount();
         switch (type) {
             case TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawTopDivider(canvas, child);
                 }
                 break;
             case MIDDLE:
-                final int actualChildCount = parent.getAdapter().getItemCount();
+                int actualChildCount = parent.getAdapter().getItemCount();
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildLayoutPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildLayoutPosition(child);
                     if (position != actualChildCount - 1) {
                         drawBottomDivider(canvas, child);
                     }
@@ -462,13 +517,13 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawBottomDivider(canvas, child);
                 }
                 break;
             case ALL:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawBottomDivider(canvas, child);
                     if (i == 0) {
                         drawTopDivider(canvas, child);
@@ -477,28 +532,28 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case ALL_HALF:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
 
-                    final float left = child.getLeft();
-                    final float right = child.getRight();
+                    float left = child.getLeft();
+                    float right = child.getRight();
 
-                    final float top1 = child.getTop() - get1_2Size();
-                    final float bottom1 = child.getTop();
+                    float top1 = child.getTop() - get1_2Size();
+                    float bottom1 = child.getTop();
                     drawDivider(canvas, left, top1, right, bottom1);
 
-                    final float top2 = child.getBottom();
-                    final float bottom2 = child.getBottom() + get1_2Size();
+                    float top2 = child.getBottom();
+                    float bottom2 = child.getBottom() + get1_2Size();
                     drawDivider(canvas, left, top2, right, bottom2);
                 }
                 break;
         }
     }
 
-    private void drawGridVerticalDivider(final Canvas canvas, final RecyclerView parent) {
-        final int childCount = parent.getChildCount();
-        final int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
-        final int actualChildCount = parent.getAdapter().getItemCount();
-        final int actualLines;
+    private void drawGridVerticalDivider(Canvas canvas, RecyclerView parent) {
+        int childCount = parent.getChildCount();
+        int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
+        int actualChildCount = parent.getAdapter().getItemCount();
+        int actualLines;
         if (actualChildCount % spanCount == 0) {
             actualLines = actualChildCount / spanCount;
         } else {
@@ -507,32 +562,32 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         switch (type) {
             case LEFT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                 }
                 break;
             case TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawTopDivider(canvas, child);
                 }
                 break;
             case RIGHT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                 }
                 break;
             case BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawBottomDivider(canvas, child);
                 }
                 break;
             case MIDDLE:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildLayoutPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildLayoutPosition(child);
                     if (i % spanCount != 0) {
                         drawLeftDivider(canvas, child);
                     }
@@ -546,7 +601,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case LEFT + TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                     drawTopDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getLeft() - horizontalDividerSize, child.getTop() - verticalDividerSize);
@@ -554,7 +609,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case LEFT + BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                     drawBottomDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getLeft() - horizontalDividerSize, child.getBottom());
@@ -562,7 +617,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case RIGHT + TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     drawTopDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getRight(), child.getTop() - verticalDividerSize);
@@ -570,7 +625,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case RIGHT + BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     drawBottomDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getRight(), child.getBottom());
@@ -578,7 +633,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case ALL:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     drawBottomDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getRight(), child.getBottom());
@@ -597,8 +652,8 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case ALL_HALF:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildAdapterPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildAdapterPosition(child);
                     //非最后一个行
                     if (position / spanCount != actualLines - 1) {
                         drawBottomDivider(canvas, child);
@@ -613,62 +668,62 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                     //第一列
                     if (i % spanCount == 0) {
                         if (position / spanCount != actualLines - 1 || i % spanCount != 0) {//去掉左下角
-                            final float left = child.getLeft() - get1_2HorizontalSize();
-                            final float top = child.getTop();
-                            final float right = child.getLeft();
-                            final float bottom = child.getBottom() + verticalDividerSize;
+                            float left = child.getLeft() - get1_2HorizontalSize();
+                            float top = child.getTop();
+                            float right = child.getLeft();
+                            float bottom = child.getBottom() + verticalDividerSize;
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getLeft() - get1_2HorizontalSize();
-                            final float top = child.getTop();
-                            final float right = child.getLeft();
-                            final float bottom = child.getBottom();
+                            float left = child.getLeft() - get1_2HorizontalSize();
+                            float top = child.getTop();
+                            float right = child.getLeft();
+                            float bottom = child.getBottom();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     //第一行
                     if (i / spanCount == 0) {
                         if ((i + 1) % spanCount != 0) {//去掉一行的最后一个
-                            final float left = child.getLeft();
-                            final float top = child.getTop() - get1_2VerticalSize();
-                            final float right = child.getRight() + horizontalDividerSize;
-                            final float bottom = child.getTop();
+                            float left = child.getLeft();
+                            float top = child.getTop() - get1_2VerticalSize();
+                            float right = child.getRight() + horizontalDividerSize;
+                            float bottom = child.getTop();
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getLeft();
-                            final float top = child.getTop() - get1_2VerticalSize();
-                            final float right = child.getRight();
-                            final float bottom = child.getTop();
+                            float left = child.getLeft();
+                            float top = child.getTop() - get1_2VerticalSize();
+                            float right = child.getRight();
+                            float bottom = child.getTop();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     if ((i + 1) % spanCount == 0) {//最后一列
-                        if (position != actualChildCount- 1) {//去掉最后一个
-                            final float left = child.getRight();
-                            final float top = child.getTop();
-                            final float right = child.getRight() + get1_2HorizontalSize();
-                            final float bottom = child.getBottom() + verticalDividerSize;
+                        if (position != actualChildCount - 1) {//去掉最后一个
+                            float left = child.getRight();
+                            float top = child.getTop();
+                            float right = child.getRight() + get1_2HorizontalSize();
+                            float bottom = child.getBottom() + verticalDividerSize;
                             drawDivider(canvas, left, top, right, bottom);
                         } else {//最后一个
-                            final float left = child.getRight();
-                            final float top = child.getTop();
-                            final float right = child.getRight() + get1_2HorizontalSize();
-                            final float bottom = child.getBottom();
+                            float left = child.getRight();
+                            float top = child.getTop();
+                            float right = child.getRight() + get1_2HorizontalSize();
+                            float bottom = child.getBottom();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     if (position / spanCount == actualLines - 1) {//最后一行
                         if (position != actualChildCount - 1 || (i + 1) % spanCount != 0) {//去掉最后一个
-                            final float left = child.getLeft();
-                            final float top = child.getBottom();
-                            final float right = child.getRight() + horizontalDividerSize;
-                            final float bottom = child.getBottom() + get1_2VerticalSize();
+                            float left = child.getLeft();
+                            float top = child.getBottom();
+                            float right = child.getRight() + horizontalDividerSize;
+                            float bottom = child.getBottom() + get1_2VerticalSize();
                             drawDivider(canvas, left, top, right, bottom);
                         } else {//最后一个
-                            final float left = child.getLeft();
-                            final float top = child.getBottom();
-                            final float right = child.getRight();
-                            final float bottom = child.getBottom() + get1_2VerticalSize();
+                            float left = child.getLeft();
+                            float top = child.getBottom();
+                            float right = child.getRight();
+                            float bottom = child.getBottom() + get1_2VerticalSize();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
@@ -689,11 +744,11 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void drawGridHorizontalDivider(final Canvas canvas, final RecyclerView parent) {
-        final int childCount = parent.getChildCount();
-        final int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
-        final int actualChildCount = parent.getAdapter().getItemCount();
-        final int columns;
+    private void drawGridHorizontalDivider(Canvas canvas, RecyclerView parent) {
+        int childCount = parent.getChildCount();
+        int spanCount = ((GridLayoutManager) parent.getLayoutManager()).getSpanCount();
+        int actualChildCount = parent.getAdapter().getItemCount();
+        int columns;
         if (actualChildCount % spanCount == 0) {
             columns = actualChildCount / spanCount;
         } else {
@@ -702,32 +757,32 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         switch (type) {
             case LEFT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                 }
                 break;
             case TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawTopDivider(canvas, child);
                 }
                 break;
             case RIGHT:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                 }
                 break;
             case BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawBottomDivider(canvas, child);
                 }
                 break;
             case MIDDLE:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildLayoutPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildLayoutPosition(child);
                     if (position / spanCount != columns - 1) {
                         drawRightDivider(canvas, child);
                     }
@@ -741,7 +796,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case LEFT + TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                     drawTopDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getLeft() - horizontalDividerSize, child.getTop() - verticalDividerSize);
@@ -749,7 +804,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case LEFT + BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawLeftDivider(canvas, child);
                     drawBottomDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getLeft() - horizontalDividerSize, child.getBottom());
@@ -757,7 +812,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case RIGHT + TOP:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     drawTopDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getRight(), child.getTop() - verticalDividerSize);
@@ -765,7 +820,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case RIGHT + BOTTOM:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
+                    View child = parent.getChildAt(i);
                     drawRightDivider(canvas, child);
                     drawBottomDivider(canvas, child);
                     drawGridRectDivider(canvas, child.getRight(), child.getBottom());
@@ -792,8 +847,8 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                 break;
             case ALL_HALF:
                 for (int i = 0; i < childCount; i++) {
-                    final View child = parent.getChildAt(i);
-                    final int position = parent.getChildAdapterPosition(child);
+                    View child = parent.getChildAt(i);
+                    int position = parent.getChildAdapterPosition(child);
                     if (i % spanCount != spanCount - 1) {//如果不是最后一行
                         drawBottomDivider(canvas, child);
                     }
@@ -806,61 +861,61 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
                     }
                     if (i % spanCount == 0) {//第一行
                         if (position / spanCount != columns - 1) {//如果不是最后一个
-                            final float left = child.getLeft();
-                            final float top = child.getTop() - get1_2VerticalSize();
-                            final float right = child.getRight() + horizontalDividerSize;
-                            final float bottom = child.getTop();
+                            float left = child.getLeft();
+                            float top = child.getTop() - get1_2VerticalSize();
+                            float right = child.getRight() + horizontalDividerSize;
+                            float bottom = child.getTop();
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getLeft();
-                            final float top = child.getTop() - get1_2VerticalSize();
-                            final float right = child.getRight();
-                            final float bottom = child.getTop();
+                            float left = child.getLeft();
+                            float top = child.getTop() - get1_2VerticalSize();
+                            float right = child.getRight();
+                            float bottom = child.getTop();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     if (i / spanCount == 0) {//第一列
                         if ((i + 1) % spanCount != 0) {//如果不是最后一个
-                            final float left = child.getLeft() - get1_2HorizontalSize();
-                            final float top = child.getTop();
-                            final float right = child.getLeft();
-                            final float bottom = child.getBottom() + verticalDividerSize;
+                            float left = child.getLeft() - get1_2HorizontalSize();
+                            float top = child.getTop();
+                            float right = child.getLeft();
+                            float bottom = child.getBottom() + verticalDividerSize;
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getLeft() - get1_2HorizontalSize();
-                            final float top = child.getTop();
-                            final float right = child.getLeft();
-                            final float bottom = child.getBottom();
+                            float left = child.getLeft() - get1_2HorizontalSize();
+                            float top = child.getTop();
+                            float right = child.getLeft();
+                            float bottom = child.getBottom();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     if ((i + 1) % spanCount == 0) {//最后一行
                         if (position != actualChildCount - 1) {//去掉右下角
-                            final float left = child.getLeft();
-                            final float top = child.getBottom();
-                            final float right = child.getRight() + horizontalDividerSize;
-                            final float bottom = child.getBottom() + get1_2VerticalSize();
+                            float left = child.getLeft();
+                            float top = child.getBottom();
+                            float right = child.getRight() + horizontalDividerSize;
+                            float bottom = child.getBottom() + get1_2VerticalSize();
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getLeft();
-                            final float top = child.getBottom();
-                            final float right = child.getRight();
-                            final float bottom = child.getBottom() + get1_2VerticalSize();
+                            float left = child.getLeft();
+                            float top = child.getBottom();
+                            float right = child.getRight();
+                            float bottom = child.getBottom() + get1_2VerticalSize();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
                     if (position / spanCount == columns - 1) {//最后一列
                         if ((i + 1) % spanCount != 0) {//去掉右下角
-                            final float left = child.getRight();
-                            final float top = child.getTop();
-                            final float right = child.getRight() + get1_2HorizontalSize();
-                            final float bottom = child.getBottom() + verticalDividerSize;
+                            float left = child.getRight();
+                            float top = child.getTop();
+                            float right = child.getRight() + get1_2HorizontalSize();
+                            float bottom = child.getBottom() + verticalDividerSize;
                             drawDivider(canvas, left, top, right, bottom);
                         } else {
-                            final float left = child.getRight();
-                            final float top = child.getTop();
-                            final float right = child.getRight() + get1_2HorizontalSize();
-                            final float bottom = child.getBottom();
+                            float left = child.getRight();
+                            float top = child.getTop();
+                            float right = child.getRight() + get1_2HorizontalSize();
+                            float bottom = child.getBottom();
                             drawDivider(canvas, left, top, right, bottom);
                         }
                     }
@@ -881,47 +936,47 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         }
     }
 
-    private void drawLeftDivider(final Canvas canvas, final View child) {
-        final float left = child.getLeft() - horizontalDividerSize;
-        final float top = child.getTop();
-        final float right = child.getLeft();
-        final float bottom = child.getBottom();
+    private void drawLeftDivider(Canvas canvas, View child) {
+        float left = child.getLeft() - horizontalDividerSize;
+        float top = child.getTop();
+        float right = child.getLeft();
+        float bottom = child.getBottom();
         drawDivider(canvas, left, top, right, bottom);
     }
 
-    private void drawTopDivider(final Canvas canvas, final View child) {
-        final float left = child.getLeft();
-        final float top = child.getTop() - verticalDividerSize;
-        final float right = child.getRight();
-        final float bottom = child.getTop();
+    private void drawTopDivider(Canvas canvas, View child) {
+        float left = child.getLeft();
+        float top = child.getTop() - verticalDividerSize;
+        float right = child.getRight();
+        float bottom = child.getTop();
         drawDivider(canvas, left, top, right, bottom);
     }
 
-    private void drawRightDivider(final Canvas canvas, final View child) {
-        final float left = child.getRight();
-        final float top = child.getTop();
-        final float right = child.getRight() + horizontalDividerSize;
-        final float bottom = child.getBottom();
+    private void drawRightDivider(Canvas canvas, View child) {
+        float left = child.getRight();
+        float top = child.getTop();
+        float right = child.getRight() + horizontalDividerSize;
+        float bottom = child.getBottom();
         drawDivider(canvas, left, top, right, bottom);
     }
 
-    private void drawBottomDivider(final Canvas canvas, final View child) {
-        final float left = child.getLeft();
-        final float top = child.getBottom();
-        final float right = child.getRight();
-        final float bottom = child.getBottom() + verticalDividerSize;
+    private void drawBottomDivider(Canvas canvas, View child) {
+        float left = child.getLeft();
+        float top = child.getBottom();
+        float right = child.getRight();
+        float bottom = child.getBottom() + verticalDividerSize;
         drawDivider(canvas, left, top, right, bottom);
     }
 
-    private void drawGridRectDivider(final Canvas canvas, final float left, final float top) {
-        final float right = left + horizontalDividerSize;
-        final float bottom = top + verticalDividerSize;
+    private void drawGridRectDivider(Canvas canvas, float left, float top) {
+        float right = left + horizontalDividerSize;
+        float bottom = top + verticalDividerSize;
         drawDivider(canvas, left, top, right, bottom);
     }
 
-    private void drawSmallGridRectDivider(final Canvas canvas, final float left, final float top) {
-        final float right = left + get1_2HorizontalSize();
-        final float bottom = top + get1_2VerticalSize();
+    private void drawSmallGridRectDivider(Canvas canvas, float left, float top) {
+        float right = left + get1_2HorizontalSize();
+        float bottom = top + get1_2VerticalSize();
         drawDivider(canvas, left, top, right, bottom);
     }
 
@@ -937,12 +992,12 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         return (int) (verticalDividerSize / 2);
     }
 
-    private void drawDivider(final Canvas canvas, final float left, final float top, final float right, final float bottom) {
+    private void drawDivider(Canvas canvas, float left, float top, float right, float bottom) {
         if (drawable != null) {
             drawable.setBounds((int) left, (int) top, (int) right, (int) bottom);
             drawable.draw(canvas);
         } else {
-            canvas.drawRect(left, top, right, bottom, mPaint);
+            canvas.drawRect(left, top, right, bottom, paint);
         }
     }
 }
