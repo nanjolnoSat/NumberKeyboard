@@ -440,7 +440,7 @@ public class RecyclerDivider extends RecyclerView.ItemDecoration {
         c.drawRect(parent.getPaddingLeft(), 0, parent.getWidth() - parent.getPaddingRight(), parent.getPaddingTop(), clipPaint);
         c.drawRect(parent.getWidth() - parent.getPaddingRight(), 0, parent.getWidth(), parent.getHeight(), clipPaint);
         c.drawRect(parent.getPaddingLeft(), parent.getHeight() - parent.getPaddingBottom(), parent.getWidth() - parent.getPaddingRight(), parent.getHeight(), clipPaint);
-        c.save(id);
+        c.restoreToCount(id);
     }
 
     private void drawHorizontalDivider(Canvas canvas, RecyclerView parent) {
